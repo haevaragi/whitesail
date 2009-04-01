@@ -24,20 +24,20 @@ import cn.edu.bit.whitesail.utils.MyContainer;
 import cn.edu.bit.whitesail.utils.MyQueue;
 import cn.edu.bit.whitesail.utils.Queue;
 
-
 /**
  *
  * @version 0.1
  * @author baifan
- * @since JDK 1.6
+ * @since 0.1
  */
 public class WhiteSail {
     public final static Container<String> VISITIED_URL_TABLE = new MyContainer<String>();
     public final static Container<String> VISITIED_PAGE_TABLE = new MyContainer<String>();
     public final static Queue<String> UNVISITED_URL_TABLE = new MyQueue<String>();
-
+    
     public static void main(String[] args) {
-        UNVISITED_URL_TABLE.add("http://www.bitren.com");
+        UNVISITED_URL_TABLE.add("http://10.2.70.148/");
+        
         new Crawler().run();
     }
 }

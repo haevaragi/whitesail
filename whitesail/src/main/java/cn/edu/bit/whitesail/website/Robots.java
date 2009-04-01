@@ -1,5 +1,5 @@
 /**
-* @(#)Page.java Mar 7, 2009
+* @(#)Robots.java Mar 22, 2009
 *
 *Copyright 2009 BaiFan
 *
@@ -17,26 +17,17 @@
 */
 
 
-package cn.edu.bit.whitesail.page;
+package cn.edu.bit.whitesail.website;
 
 /**
  *
- * @version 0.1
+ *
  * @author baifan
- * @since JDK 1.6
+ * @since 0.1
  */
-public class Page {
-
-    private String URL;
-
-    private String fromURL;
-    
-    private String rawContent;
-    
-   
-
-    public Page() {}
-
-    
-
+public class Robots {
+    boolean isAllowed(String path) {
+        
+        return false;
+    }
 }
