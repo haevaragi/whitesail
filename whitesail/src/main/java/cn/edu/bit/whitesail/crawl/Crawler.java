@@ -18,17 +18,24 @@
 package cn.edu.bit.whitesail.crawl;
 
 import cn.edu.bit.whitesail.WhiteSail;
+import cn.edu.bit.whitesail.page.Page;
+import cn.edu.bit.whitesail.page.URL;
 import cn.edu.bit.whitesail.parser.HtmlParser;
 import cn.edu.bit.whitesail.parser.Parser;
-import cn.edu.bit.whitesail.utils.MD5Signature;
+
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.zip.DeflaterInputStream;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.Inflater;
+import java.util.zip.InflaterInputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.Header;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -42,44 +49,72 @@ import org.apache.http.params.HttpParams;
  * @author baifan
  * @since JDK 1.6
  */
-public class Crawler implements Runnable {
+public class Crawler extends Thread {
 
     private final static Log LOG = LogFactory.getLog(Crawler.class);
     private HttpClient httpClient;
     private static transient boolean isFinished = false;
     private Parser parser;
+    private String dataDirectory = "./data";
+    private String fileName;
+    private long block = 1;
+    private File file;
+    private FileOutputStream fos;
 
     public Crawler() {
         httpClient = new DefaultHttpClient();
         parser = new HtmlParser();
+        HttpParams params = httpClient.getParams();
+
+        params.setParameter("http.useragent", "BaiFan Robot");
+        // combine cookie
+        params.setParameter("http.protocol.single-cookie-header", Boolean.TRUE);
+        // socket time out
+        params.setParameter("http.socket.timeout", 20000);
+        // limit the redirect times
+        params.setParameter("http.protocol.max-redirects", 3);
+        // cookie policy,
+        params.setParameter("http.protocol.cookie-policy", "compatibility");
     }
 
     @Override
     public void run() {
         while (!isFinished) {
-            String anchor = fetchURL();
-            WhiteSail.VISITIED_URL_TABLE.add(anchor);
-            if (anchor == null) {
+
+            URL u = fetchURL();
+            if (u == null || u.to == null || u.to.equals("")) {
                 continue;
             }
+            WhiteSail.VISITIED_URL_TABLE.add(u.to);
+
             if (LOG.isInfoEnabled()) {
-                LOG.info("download " + anchor);
+                LOG.info("download " + u.to);
             }
-            byte[] contents = download(anchor);
+            byte[] contents = download(u.to);
             if (contents == null) {
                 continue;
             }
-            if (!WhiteSail.VISITIED_PAGE_TABLE.add(MD5Signature.calculate(contents))) {
+            if (!WhiteSail.VISITIED_PAGE_TABLE.add(contents)) {
                 continue;
             }
+            Page page = new Page(contents);
+            page.fromURL = u.from;
+            page.URL = u.to;
 
-            WhiteSail.UNVISITED_URL_TABLE.add(parser.extractURLFromContent(contents, anchor));
+            WhiteSail.UNVISITED_URL_TABLE.add(parser.extractURLFromContent(page));
+
+            appendData(page);
         }
         httpClient.getConnectionManager().shutdown();
+        try {
+            fos.close();
+        } catch (IOException ex) {
+            LOG.error("fileoutputstream can not close");
+        }
     }
 
-    private String fetchURL() {
-        String result = null;
+    private URL fetchURL() {
+        URL result = null;
         while ((result = WhiteSail.UNVISITED_URL_TABLE.get()) == null) {
             try {
                 LOG.info("unvisitable is empty , crawler sleeps for a while");
@@ -94,46 +129,67 @@ public class Crawler implements Runnable {
 
     private byte[] download(String URL) {
         byte[] result = null;
+        HttpEntity httpEntity = null;
         try {
-            
+
             HttpGet httpGet = new HttpGet(URL);
-            
-            HttpParams params = httpClient.getParams();
-            
-            params.setParameter("http.useragent", "BaiFan Robot");
-            // combine cookie
-            params.setParameter("http.protocol.single-cookie-header", Boolean.TRUE);
-            // socket time out
-            params.setParameter("http.socket.timeout", 60000);
-            // limit the redirect times
-            params.setParameter("http.protocol.max-redirects", 3);
-            // cookie policy,
-            params.setParameter("http.protocol.cookie-policy", "compatibility");
-            
-            httpGet.addHeader(URL, URL);
+
+
+
+            httpGet.addHeader("Accept-Language", "zh-cn,zh,en");
+            httpGet.addHeader("Accept-Encoding", "gzip,deflate");
             HttpResponse response = httpClient.execute(httpGet);
-            Header header = response.getFirstHeader("Content-Type");
-            if (header.getValue().indexOf("text/html") >= 0) {
-                InputStream in = response.getEntity().getContent();
-                header = response.getFirstHeader("Content-Encoding");
-                if (null != header) {
-                    if (header.getValue().indexOf("gzip") >= 0)
-                        in = new GZIPInputStream(in);
-                    else if (header.getValue().indexOf("deflate") >= 0)
-                        in = new DeflaterInputStream(in);
+
+            if (response.getStatusLine().getStatusCode() == 200) {
+                Header header = response.getFirstHeader("content-type");
+                if (header != null && header.getValue().indexOf("text/html") >= 0) {
+                    httpEntity = response.getEntity();
+                    InputStream in = null;
+                    in = httpEntity.getContent();
+                    header = response.getFirstHeader("Content-Encoding");
+                    if (null != header) {
+                        if (header.getValue().indexOf("gzip") >= 0) {
+                            in = new GZIPInputStream(in);
+                        } else if (header.getValue().indexOf("deflate") >= 0) {
+                            in = new InflaterInputStream(in, new Inflater(true));
+                        }
                     }
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
-                byte[] buffer = new byte[1024];
-                int len = 0;
-                while ((len = in.read(buffer)) != -1) {
-                    out.write(buffer, 0, len);
+                    ByteArrayOutputStream out = new ByteArrayOutputStream();
+                    byte[] buffer = new byte[1024];
+                    int len = 0;
+                    while ((len = in.read(buffer)) != -1) {
+                        out.write(buffer, 0, len);
+                    }
+                    result = out.toByteArray();
+
                 }
-                result = out.toByteArray();
             }
         } catch (IOException ex) {
             LOG.warn("downloading error,abandon");
             result = null;
         }
         return result;
+    }
+
+    private void appendData(Page page) {
+        if (file == null) {
+            fileName = WhiteSail.DATA_DIRECTORY + "/" + getId() + "_" + block;
+            file = new File(fileName);
+        }
+        if (fos == null) {
+            try {
+                fos = new FileOutputStream(file, true);
+            } catch (FileNotFoundException ex) {
+                LOG.error("can not open file");
+            }
+        }
+        try {
+            fos.write(page.toByteArray());
+            fos.write(page.rawContent);
+            fos.flush();
+        } catch (IOException ex) {
+            LOG.error("can not write file");
+        }
+
     }
 }

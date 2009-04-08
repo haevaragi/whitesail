@@ -1,5 +1,5 @@
 /**
-* @(#)Parser.java Mar 15, 2009
+* @(#)URL.java Apr 6, 2009
 *
 *Copyright 2009 BaiFan
 *
@@ -17,18 +17,27 @@
 */
 
 
-package cn.edu.bit.whitesail.parser;
-
-import cn.edu.bit.whitesail.page.Page;
-import cn.edu.bit.whitesail.page.URL;
-import java.util.List;
+package cn.edu.bit.whitesail.page;
 
 /**
  *
- * @version 0.1
+ * 
  * @author baifan
- * @since JDK 1.6
+ * @since 
  */
-public interface Parser {
-    List<URL> extractURLFromContent(Page page);
-}
+ public class URL {
+        public String from;
+        public String to;
+
+        @Override
+        public boolean equals(Object obj) {
+            return (obj instanceof URL && ((URL)obj).to.equals(this.to));
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 13 * hash + (this.to != null ? this.to.hashCode() : 0);
+            return hash;
+        }
+    }

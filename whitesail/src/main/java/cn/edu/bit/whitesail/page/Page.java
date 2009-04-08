@@ -19,24 +19,70 @@
 
 package cn.edu.bit.whitesail.page;
 
+
+import cn.edu.bit.whitesail.utils.MD5Signature;
+import java.util.Calendar;
+import java.util.Date;
+
 /**
  *
  * @version 0.1
  * @author baifan
  * @since JDK 1.6
  */
-public class Page {
+public final class Page implements java.io.Serializable{
+  
 
-    private String URL;
+    public String URL;
 
-    private String fromURL;
+    public String fromURL;
     
-    private String rawContent;
-    
-   
+    public byte[] rawContent;
 
-    public Page() {}
+    public String MD5Hash;
 
-    
+    public int length;
 
+    public String encoding;
+
+    public String modifyTime;
+
+    public Page(byte[] rawContents) {
+         this.rawContent =  rawContents;
+         MD5Hash = MD5Signature.calculate(rawContent);
+         length = rawContents.length;
+         modifyTime = Calendar.getInstance().getTime().toString();
+    }
+
+  
+  
+
+    @Override
+    public boolean equals(Object obj) {        
+        return (obj instanceof Page && ((Page)obj).MD5Hash.equals(MD5Hash));
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 23 * hash + (this.rawContent != null ? this.rawContent.hashCode() : 0);
+        return hash;
+    }
+
+    public byte[] toByteArray() {
+        StringBuffer sb = new StringBuffer();
+        sb.append("\n");
+        sb.append(MD5Hash);
+        sb.append("\n");
+        sb.append(URL);
+        sb.append("\n");
+        sb.append(fromURL);
+        sb.append(length);
+        sb.append("\n");
+        sb.append(modifyTime);
+        sb.append("\n");
+        sb.append(encoding);
+        sb.append("\n");
+        return sb.toString().getBytes();
+    }
 }
