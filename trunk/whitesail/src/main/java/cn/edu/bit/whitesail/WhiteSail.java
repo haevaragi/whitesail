@@ -19,10 +19,13 @@ package cn.edu.bit.whitesail;
 
 
 import cn.edu.bit.whitesail.crawl.Crawler;
+import cn.edu.bit.whitesail.page.Page;
+import cn.edu.bit.whitesail.page.URL;
 import cn.edu.bit.whitesail.utils.Container;
 import cn.edu.bit.whitesail.utils.MyContainer;
 import cn.edu.bit.whitesail.utils.MyQueue;
 import cn.edu.bit.whitesail.utils.Queue;
+import java.io.File;
 
 /**
  *
@@ -32,12 +35,19 @@ import cn.edu.bit.whitesail.utils.Queue;
  */
 public class WhiteSail {
     public final static Container<String> VISITIED_URL_TABLE = new MyContainer<String>();
-    public final static Container<String> VISITIED_PAGE_TABLE = new MyContainer<String>();
-    public final static Queue<String> UNVISITED_URL_TABLE = new MyQueue<String>();
-    
+    public final static Container<byte[]> VISITIED_PAGE_TABLE = new MyContainer<byte[]>();
+    public final static Queue<URL> UNVISITED_URL_TABLE = new MyQueue<URL>();
+    public final static String DATA_DIRECTORY = "./data";
     public static void main(String[] args) {
-        UNVISITED_URL_TABLE.add("http://10.2.70.148/");
-        
+        File directory = new File(DATA_DIRECTORY);
+        if (!directory.exists()) {
+             
+                    directory.mkdirs();
+                
+        }
+        URL start = new URL();
+        start.to = "http://www.bitren.com";
+        UNVISITED_URL_TABLE.add(start);        
         new Crawler().run();
     }
 }
