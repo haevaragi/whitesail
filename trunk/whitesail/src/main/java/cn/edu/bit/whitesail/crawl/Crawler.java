@@ -23,6 +23,7 @@ import cn.edu.bit.whitesail.page.URL;
 import cn.edu.bit.whitesail.parser.HtmlParser;
 import cn.edu.bit.whitesail.parser.Parser;
 
+import cn.edu.bit.whitesail.utils.MD5Signature;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -47,7 +48,7 @@ import org.apache.http.params.HttpParams;
  *
  * @version 0.1
  * @author baifan
- * @since JDK 1.6
+ * @since 0.1
  */
 public class Crawler extends Thread {
 
@@ -60,7 +61,7 @@ public class Crawler extends Thread {
     private long block = 1;
     private File file;
     private FileOutputStream fos;
-
+   
     public Crawler() {
         httpClient = new DefaultHttpClient();
         parser = new HtmlParser();
@@ -94,7 +95,7 @@ public class Crawler extends Thread {
             if (contents == null) {
                 continue;
             }
-            if (!WhiteSail.VISITIED_PAGE_TABLE.add(contents)) {
+            if (!WhiteSail.VISITIED_PAGE_TABLE.add(MD5Signature.calculate(contents))) {
                 continue;
             }
             Page page = new Page(contents);
@@ -133,8 +134,6 @@ public class Crawler extends Thread {
         try {
 
             HttpGet httpGet = new HttpGet(URL);
-
-
 
             httpGet.addHeader("Accept-Language", "zh-cn,zh,en");
             httpGet.addHeader("Accept-Encoding", "gzip,deflate");
