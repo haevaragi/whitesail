@@ -22,6 +22,12 @@ package cn.edu.bit.whitesail.utils;
 /**
  *<p>I need a Container ,so this interface <code> Container</code> will
  * define all the functions that I need.
+ * I just care whether the container can add item or not ,
+ *
+ * and whether the container has contained the specific item .
+ *
+ *
+ * so,there is only two methods
  *
  * @version 0.1
  * @author baifan
@@ -29,26 +35,17 @@ package cn.edu.bit.whitesail.utils;
  */
 public interface Container<T> {
     /**
+     *
      * add a item t to the Container
      * @param t
+     * @return can add or not
      */
     boolean add(T t);
 
     /**
-     * delete a item t from the Container
+     *contains?
      * @param t
-     */
-    void delete(T t);
-
-    /**
-     * testing  whether the Container contains this item t.
-     * @param t
-     * @return the result
+     * @return true or false
      */
     boolean contains(T t);
-
-    boolean isEmpty();
-
-    boolean isFull();
-    
 }

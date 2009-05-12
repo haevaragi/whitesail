@@ -19,7 +19,6 @@ package cn.edu.bit.whitesail;
 
 
 import cn.edu.bit.whitesail.crawl.Crawler;
-import cn.edu.bit.whitesail.page.Page;
 import cn.edu.bit.whitesail.page.URL;
 import cn.edu.bit.whitesail.utils.Container;
 import cn.edu.bit.whitesail.utils.MyContainer;

@@ -30,7 +30,6 @@ import java.util.Set;
 public class MyContainer<T> implements Container<T> {
 
     final private Set<T> container = new HashSet<T>();
-    private int capacity = 3000;
     
     @Override
     public boolean  add(T t) {
@@ -40,32 +39,10 @@ public class MyContainer<T> implements Container<T> {
     }
 
     @Override
-    public void delete(T t) {
-        synchronized (container) {
-            container.remove(t);
-        }
-    }
-
-    @Override
     public boolean contains(T t) {
-        synchronized(container) {
+        synchronized (container) {
             return container.contains(t);
         }
     }
-
-    @Override
-    public boolean isEmpty() {
-        synchronized(container) {
-            return container.isEmpty();
-        }
-    }
-
-    @Override
-    public boolean isFull() {
-        synchronized(container) {
-            return container.size() == capacity ? true : false;
-        }
-    }
-
 
 }
