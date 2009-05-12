@@ -30,7 +30,13 @@ import java.util.List;
 public interface Queue<T> {
     void add(T t);
     void add(List<? extends T> t);
+
+    /**
+     * fetch and remove a item from queue
+     * @return item (may be null if queue is empty)
+     */
     T get();
+    
     boolean isFull();
     boolean isEmpty();
 }

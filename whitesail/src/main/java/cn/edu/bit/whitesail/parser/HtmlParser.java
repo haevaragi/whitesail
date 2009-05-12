@@ -19,6 +19,7 @@ package cn.edu.bit.whitesail.parser;
 
 import cn.edu.bit.whitesail.page.Page;
 import cn.edu.bit.whitesail.page.URL;
+import cn.edu.bit.whitesail.utils.WhiteSailConfig;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -32,6 +33,7 @@ import org.cyberneko.html.parsers.DOMParser;
 import org.mozilla.intl.chardet.nsDetector;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+import org.w3c.dom.html.HTMLDocument;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -48,11 +50,14 @@ public class HtmlParser implements Parser {
     @Override
     public List<URL> extractURLFromContent(Page page) {
         List<URL> result = new ArrayList<URL>();
-        charDetectAndSet(page);
+
+        if (page.encoding == null || page.encoding.equals("")) {
+            charDetectAndSet(page);
+        }
         try {
-            DOMParser parser = new DOMParser();
-            parser.setProperty("http://cyberneko.org/html/properties/default-encoding", page.encoding);
+            DOMParser parser = new DOMParser();           
             parser.parse(new InputSource(new ByteArrayInputStream(page.rawContent)));
+            HTMLDocument doc = (HTMLDocument)parser.getDocument();
             getLinks(parser.getDocument(), result, page.URL);
         } catch (SAXException ex) {
             LOG.warn("document parsing error");
@@ -137,6 +142,10 @@ public class HtmlParser implements Parser {
             }            
         }
 
+       
+        if (page.encoding == null || page.encoding.equals("")) {
+            page.encoding = WhiteSailConfig.DEFAULT_ENCODING;
+        }
       
     }
 

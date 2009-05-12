@@ -56,12 +56,12 @@ public class Crawler extends Thread {
     private HttpClient httpClient;
     private static transient boolean isFinished = false;
     private Parser parser;
-    private String dataDirectory = "./data";
     private String fileName;
     private long block = 1;
     private File file;
     private FileOutputStream fos;
-   
+    private String detectedEncoding;
+
     public Crawler() {
         httpClient = new DefaultHttpClient();
         parser = new HtmlParser();
@@ -86,7 +86,9 @@ public class Crawler extends Thread {
             if (u == null || u.to == null || u.to.equals("")) {
                 continue;
             }
-            WhiteSail.VISITIED_URL_TABLE.add(u.to);
+            if (!WhiteSail.VISITIED_URL_TABLE.add(u.to)) {
+                continue;
+            }
 
             if (LOG.isInfoEnabled()) {
                 LOG.info("download " + u.to);
@@ -98,7 +100,7 @@ public class Crawler extends Thread {
             if (!WhiteSail.VISITIED_PAGE_TABLE.add(MD5Signature.calculate(contents))) {
                 continue;
             }
-            Page page = new Page(contents);
+            Page page = new Page(contents,detectedEncoding);
             page.fromURL = u.from;
             page.URL = u.to;
 
@@ -137,32 +139,45 @@ public class Crawler extends Thread {
 
             httpGet.addHeader("Accept-Language", "zh-cn,zh,en");
             httpGet.addHeader("Accept-Encoding", "gzip,deflate");
+
             HttpResponse response = httpClient.execute(httpGet);
 
-            if (response.getStatusLine().getStatusCode() == 200) {
-                Header header = response.getFirstHeader("content-type");
-                if (header != null && header.getValue().indexOf("text/html") >= 0) {
-                    httpEntity = response.getEntity();
-                    InputStream in = null;
-                    in = httpEntity.getContent();
-                    header = response.getFirstHeader("Content-Encoding");
-                    if (null != header) {
-                        if (header.getValue().indexOf("gzip") >= 0) {
-                            in = new GZIPInputStream(in);
-                        } else if (header.getValue().indexOf("deflate") >= 0) {
-                            in = new InflaterInputStream(in, new Inflater(true));
-                        }
-                    }
-                    ByteArrayOutputStream out = new ByteArrayOutputStream();
-                    byte[] buffer = new byte[1024];
-                    int len = 0;
-                    while ((len = in.read(buffer)) != -1) {
-                        out.write(buffer, 0, len);
-                    }
-                    result = out.toByteArray();
+            if (response.getStatusLine().getStatusCode() != 200) {
+                return null;
+            }
 
+            Header header = response.getFirstHeader("content-type");
+
+            if (header == null || header.getValue().indexOf("text/html") < 0) {
+                return null;
+            }
+            
+            int pos = header.getValue().indexOf("charset=");
+            if (pos >= 0) {
+                detectedEncoding = header.getValue().substring(pos + 8);
+            }
+
+            httpEntity = response.getEntity();
+            InputStream in = null;
+            in = httpEntity.getContent();
+
+            header = response.getFirstHeader("Content-Encoding");
+            if (null != header) {
+                if (header.getValue().indexOf("gzip") >= 0) {
+                    in = new GZIPInputStream(in);
+                } else if (header.getValue().indexOf("deflate") >= 0) {
+                    in = new InflaterInputStream(in, new Inflater(true));
                 }
             }
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int len = 0;
+            while ((len = in.read(buffer)) != -1) {
+                out.write(buffer, 0, len);
+            }
+            result = out.toByteArray();
+
         } catch (IOException ex) {
             LOG.warn("downloading error,abandon");
             result = null;

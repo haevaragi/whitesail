@@ -47,7 +47,8 @@ public final class Page implements java.io.Serializable{
 
     public String modifyTime;
 
-    public Page(byte[] rawContents) {
+    public Page(byte[] rawContents, String detectedEncoding) {
+         encoding = detectedEncoding;
          this.rawContent =  rawContents;
          MD5Hash = MD5Signature.calculate(rawContent);
          length = rawContents.length;
